@@ -3,6 +3,7 @@ package com.hyeonwook.todolist.service.todo;
 import java.util.List;
 
 import com.hyeonwook.todolist.web.dto.todo.CreateTodoReqDto;
+import com.hyeonwook.todolist.web.dto.todo.TodoListRespDto;
 
 public interface TodoService {
 	//추가
@@ -11,5 +12,5 @@ public interface TodoService {
 	
 	//삭제
 	//조회
-	public List<?> getToList(int page) throws Exception;
+	public List<TodoListRespDto> getTodoList(int page, int contentCount) throws Exception;
 }

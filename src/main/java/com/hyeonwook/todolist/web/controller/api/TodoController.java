@@ -3,8 +3,11 @@ package com.hyeonwook.todolist.web.controller.api;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hyeonwook.todolist.service.todo.TodoService;
 import com.hyeonwook.todolist.web.dto.CMRespDto;
+import com.hyeonwook.todolist.web.dto.UpdateTodoReqDto;
 import com.hyeonwook.todolist.web.dto.todo.CreateTodoReqDto;
 import com.hyeonwook.todolist.web.dto.todo.TodoListRespDto;
 
@@ -31,9 +35,21 @@ public class TodoController {
 			list = todoService.getTodoList(page, contentCount);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return ResponseEntity.ok().body(new CMRespDto<>(-1, page + "page list on load failed", list));
+			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, page + "page list on load failed", list));
 		}
 		return ResponseEntity.ok().body(new CMRespDto<>(1, page + "page list success load", list));
+	}
+	
+	@GetMapping("/list/importance")
+	public ResponseEntity<?> getImportanceTodoList(@RequestParam int page, @RequestParam int contentCount) {
+		List<TodoListRespDto> list = null;
+		try {
+			list = todoService.getImportanceTodoList(page, contentCount);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, page + "page importance list on load failed", list));
+		}
+		return ResponseEntity.ok().body(new CMRespDto<>(1, page + "page importance list success load", list));
 	}
 	
 	@PostMapping("/todo")
@@ -45,5 +61,54 @@ public class TodoController {
 			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, "Adding todo failed", createTodoReqDto));
 		}
 		return ResponseEntity.ok().body(new CMRespDto<>(1, "success", createTodoReqDto));
+	}
+	
+	@PutMapping("/complete/todo/{todoCode}")
+	public ResponseEntity<?> setcompleteTodo(@PathVariable int todoCode) {
+		boolean status = false;
+		try {
+			status = todoService.updateTodoComplete(todoCode);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, "failed", status));
+		}
+		return ResponseEntity.ok().body(new CMRespDto<>(1, "success", status));
+	}
+	
+	@PutMapping("/importance/todo/{todoCode}")
+	public ResponseEntity<?> setimportanceTodo(@PathVariable int todoCode) {
+		boolean status = false;
+		try {
+			status = todoService.updateTodoImportance(todoCode);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, "failed", status));
+		}
+		return ResponseEntity.ok().body(new CMRespDto<>(1, "success", status));
+	}
+	
+	@PutMapping("/todo/{todoCode}")
+	public ResponseEntity<?> setTodo(@PathVariable int todoCode, @RequestBody UpdateTodoReqDto updateTodoReqDto) {
+		boolean status = false;
+		try {
+			updateTodoReqDto.setTodoCode(todoCode);
+			status = todoService.updateTodo(updateTodoReqDto);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, "failed", status));
+		}
+		return ResponseEntity.ok().body(new CMRespDto<>(1, "success", status));
+	}
+	
+	@DeleteMapping("/todo/{todoCode}")
+	public ResponseEntity<?> removeTodo(@PathVariable int todoCode) {
+		boolean status = false;
+		try {
+			status = todoService.removeTodo(todoCode);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new CMRespDto<>(-1, "failed", status));
+		}
+		return ResponseEntity.ok().body(new CMRespDto<>(1, "success", status));
 	}
 }

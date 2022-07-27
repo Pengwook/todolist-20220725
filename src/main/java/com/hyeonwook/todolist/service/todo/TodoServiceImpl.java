@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.hyeonwook.todolist.domain.todo.Todo;
 import com.hyeonwook.todolist.domain.todo.TodoRepository;
+import com.hyeonwook.todolist.web.dto.UpdateTodoReqDto;
 import com.hyeonwook.todolist.web.dto.todo.CreateTodoReqDto;
 import com.hyeonwook.todolist.web.dto.todo.TodoListRespDto;
 
@@ -23,28 +24,44 @@ public class TodoServiceImpl implements TodoService{
 	@Override
 	public boolean createTodo(CreateTodoReqDto createTodoReqDto) throws Exception {
 		Todo todoEntity = createTodoReqDto.toEntity();
-		String content = todoEntity.getTodo_content();
-		for(int i = 200; i < 1000; i++) {
-			todoEntity.setTodo_content(content + "_" + (i + 1));
-			if(i % 2 == 0) {
-				todoEntity.setImportance_flag(1);
-			}else {
-				todoEntity.setImportance_flag(0);
-			}
-			todoRepository.save(todoEntity);
-		}
-		return true;
-//		return todoRepository.save(todoEntity) > 0;
+		return todoRepository.save(todoEntity) > 0;
+//		String content = todoEntity.getTodo_content(); 얘들은 테스팅용 포문
+//		for(int i = 200; i < 1000; i++) {
+//			todoEntity.setTodo_content(content + "_" + (i + 1));
+//			if(i % 2 == 0) {
+//				todoEntity.setImportance_flag(1);
+//			}else {
+//				todoEntity.setImportance_flag(0);
+//			}
+//			todoRepository.save(todoEntity);
+//		}
+//		return true;
 	}
 	
 	@Override
 	public List<TodoListRespDto> getTodoList(int page, int contentCount) throws Exception {
+	
+		List<Todo> todoList = todoRepository.getTodoListOfIndex(createGetTodoListMap(page, contentCount));
+		
+		return createTodoListRespDtos(todoList);
+	}
+	
+	@Override
+	public List<TodoListRespDto> getImportanceTodoList(int page, int contentCount) throws Exception {
+		
+		List<Todo> todoList = todoRepository.getImportanceTodoListOfIndex(createGetTodoListMap(page, contentCount));
+		
+		return createTodoListRespDtos(todoList);
+	}
+	
+	private Map<String, Object> createGetTodoListMap(int page, int contentCount) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("index", (page - 1) * contentCount);
 		map.put("count", contentCount);
-		
-		List<Todo> todoList = todoRepository.getTodoListOfIndex(map);
-		
+		return map;
+	}
+	
+	private List<TodoListRespDto> createTodoListRespDtos(List<Todo> todoList) {
 		List<TodoListRespDto> todoListRespDtos = new ArrayList<TodoListRespDto>();
 		
 		todoList.forEach(todo -> {
@@ -52,5 +69,27 @@ public class TodoServiceImpl implements TodoService{
 		});
 		
 		return todoListRespDtos;
+	}
+	
+	@Override
+	public boolean updateTodoComplete(int todoCode) throws Exception {
+		return todoRepository.updateTodoComplete(todoCode) > 0;
+	}
+	
+	@Override
+	public boolean updateTodoImportance(int todoCode) throws Exception {
+		return todoRepository.updateTodoImportance(todoCode) > 0;
+	}
+	
+	@Override
+	public boolean updateTodo(UpdateTodoReqDto updateTodoReqDto) throws Exception {
+		
+		return todoRepository.updateTodoByTodoCode(updateTodoReqDto.toEntity()) > 0;
+	}
+	
+	@Override
+	public boolean removeTodo(int todoCode) throws Exception {
+		
+		return todoRepository.remove(todoCode) > 0;
 	}
 }

@@ -13,3 +13,11 @@
 ul {
     list-style-type: none;
 }
+
+body {
+    background-color: #fafafa;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

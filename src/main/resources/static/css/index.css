@@ -165,14 +165,14 @@ main {
     left: 0px;
 }
 
-
+.todo-content:not(:last-of-type) {
+	margin-bottom: 10px;
+}
 
 .todo-content {
     display:flex;
     align-items: center;
     
-    margin-bottom: 10px;
-
     border-bottom: 1px solid #dbdbdb;
 
     width: 100%;
@@ -196,11 +196,10 @@ main {
 .todo-content-input {
     width: 280px;
     height: 20px;
-    border: 9ox;
+    border: 0px;
     outline: 0px;
     background-color: #fafafa;
 }
-
 
 .importance-check {
     display: none;
@@ -215,7 +214,6 @@ main {
     position: absolute;
     background-color: #dbdbdb70;
     right: 28px;
-    z-index: 1;
     cursor: pointer; 
 }
 
@@ -249,7 +247,7 @@ main {
     height: 18px;
     position: absolute;
     top: 0px;
-    left: 0px;
+    left: 1px;
 }
 
 
@@ -286,7 +284,7 @@ main {
 }
 
 .section-body::-webkit-scrollbar {
-    width: 0px;
+    width:0px;
 }
 
 .todo-add-button {

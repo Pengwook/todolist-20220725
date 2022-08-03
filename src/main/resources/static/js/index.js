@@ -3,6 +3,7 @@ const typeSelectBoxList = document.querySelector(".type-select-box-list");
 const typeSelectBoxListLis = typeSelectBoxList.querySelectorAll("li");
 const todoContentList = document.querySelector(".todo-content-list");
 const sectionBoby = document.querySelector(".section-body");
+const incompleteCountNumber = document.querySelector(".incomplete-count-number");
 
 let page = 1;
 let totalPage = 0;
@@ -78,7 +79,7 @@ function setTotalCount(totalCount){
 }
 
 function getList(data) {
-	const incompleteCountNumber = document.querySelector(".incomplete-count-number");
+	
 	incompleteCountNumber.textContent = data[0].incompleteCount;
 	setTotalCount(data[0].totalCount);
 	for(let content of data) {
@@ -108,6 +109,13 @@ function addEvent() {
 		todoCode = todoCode.substring(index + 1);
 		
 		todoContents[i].querySelector(".complete-check").onchange = () => {
+			let incompleteCount = parseInt(incompleteCountNumber.textContent);
+			
+			if(todoContents[i].querySelector(".complete-check").checked) {
+				incompleteCountNumber.textContent = incompleteCount - 1;
+			}else{
+				incompleteCountNumber.textContent = incompleteCount + 1;
+			}
 			updateCheckStatus("complete", todoContents[i], todoCode);
 		}
 		
@@ -118,6 +126,57 @@ function addEvent() {
 		todoContents[i].querySelector(".trash-button").onclick = () => {
 			deleteTodo(todoContents[i], todoCode);
 		}
+		
+		const todoContentText = todoContents[i].querySelector(".todo-content-text");
+		const todoContentInput = todoContents[i].querySelector(".todo-content-input");
+		let todoContentValue = null;
+		
+		let eventFlag = false;
+		
+		todoContentText.onclick = () => {
+			todoContentValue = todoContentInput.value;
+			todoContentText.classList.toggle("visible");	
+			todoContentInput.classList.toggle("visible");
+			todoContentInput.focus();
+			eventFlag = true;
+		}
+		
+		let updateTodoContent = () => {
+			if(todoContentValue != todoContentInput.value) {
+					$.ajax({
+						type: "put",
+						url: `/api/v1/todolist/todo/${todoCode}`,
+						contentType: "application/json",
+						data: JSON.stringify({
+							"todoCode": todoCode,
+							todo: todoContentInput.value
+							}),
+						async: false,
+						dataType: "json",
+						success: (response) => {
+							if(response.data) {
+								todoContentText.textContent = todoContentInput.value;
+							}
+						},
+						error: errorMessage
+					})
+				}
+				todoContentText.classList.toggle("visible");	
+				todoContentInput.classList.toggle("visible");
+		}
+		
+		todoContentInput.onblur = () => {	// 포커스가 벗어났을때
+			if(eventFlag) {
+					updateTodoContent();
+				}
+		}
+		todoContentInput.onkeyup = () => {
+			if(window.event.keyCode == 13) {
+				eventFlag = false;
+				updateTodoContent();
+			}
+		}
+		
 	}
 }
 

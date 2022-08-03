@@ -102,21 +102,21 @@ function getList(data) {
 function addEvent() {
 	const todoContents = document.querySelectorAll(".todo-content");
 	
-	for(let i = 0; i < todoContents.length; i++){
+	for(let i = 0; i < todoContents.length; i++){	
 		let todoCode = todoContents[i].querySelector(".complete-check").getAttribute("id");
 		let index = todoCode.lastIndexOf("-");
 		todoCode = todoCode.substring(index + 1);
 		
 		todoContents[i].querySelector(".complete-check").onchange = () => {
-			updateComplete(todoContents[i], todoCode);
+			updateCheckStatus("complete", todoContents[i], todoCode);
 		}
 		
 		todoContents[i].querySelector(".importance-check").onchange = () => {
-			
+			updateCheckStatus("importance", todoContents[i], todoCode);
 		}
 		
 		todoContents[i].querySelector(".trash-button").onclick = () => {
-			
+			deleteTodo(todoContents[i], todoCode);
 		}
 	}
 }
@@ -127,7 +127,7 @@ function updateStatus(type, todoCode) {
 	$.ajax({
 		type: "put",
 		url: `/api/v1/todolist/${type}/todo/${todoCode}`,
-		async: false,
+		async: false, // 동기처리
 		dataType: "json",
 		success: (response) => {
 			result = response.data
@@ -138,20 +138,39 @@ function updateStatus(type, todoCode) {
 	return result;
 }
 
-function updateComplete(todoContent, todoCode) {
-	let result = updateStatus("complete", todoCode);
+function updateCheckStatus(type, todoContent, todoCode) {
+	let result = updateStatus(type, todoCode);	
 	
-	if((listType == "complete" || listType == "incomplete") && result){
+	if(
+			(
+				(
+					type == "complete" 
+					&& 
+					(listType == "complete" || listType =="incomplete")
+				)
+	 			||
+				(type == "importance" && listType == "importance")
+	 		) 
+	 		&& 
+	 		result
+	 	) {
 		todoContentList.removeChild(todoContent);
 	}
 }
 
-function updateImportance(todoContent) {
-	
-}
-
-function deleteTodo(todoContent) {
-	
+function deleteTodo(todoContent, todoCode) {
+	$.ajax({
+		type: "delete",
+		url: `/api/v1/todolist/todo/${todoCode}`,
+		async: false,
+		dataType: "json",
+		success: (response) => {
+			if(response.data) {
+				todoContentList.removeChild(todoContent);
+			}
+		},
+		error: errorMessage
+	})
 }
 
 function errorMessage(request, status, error) {
@@ -160,8 +179,6 @@ function errorMessage(request, status, error) {
 	console.log(request.responseText);
 	console.log(error);
 }
-
-
 
 
 

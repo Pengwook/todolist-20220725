@@ -5,57 +5,46 @@ const todoContentList = document.querySelector(".todo-content-list");
 const sectionBoby = document.querySelector(".section-body");
 const incompleteCountNumber = document.querySelector(".incomplete-count-number");
 
+/*  게시글 불러오기
+
+	1. todoList의 type이 무엇인가 중요함.
+		- all
+		- importance
+		- complete
+		- incomplete
+		
+	2. 요청주소: api/v1/todolist/list/{type}?page=페이지 번호&contentCount=글의 개수(?page부터 파라미터로)
+	
+	3. AJAX 요청을 활용
+		- type: get
+		- url: 요청주소
+		- data: 객체 -> { key:value } -> { page: 1, contentCount: 20 }
+		- dataType: 응답받을 데이터의 타입 -> json(기본적으론 text로 되어있음)
+		- success: 함수 -> response 매개변수를 받아야함. (CMRespDto가 response에 들어옴)
+		- error: 함수 -> 요청실패 400 ~ 
+				- 400 에러의 경우
+					- 매개변수 타입이 잘 못된 경우
+					- 요청 리소스가 잘 못된 경우
+					- 권한이 없어서 요청을 하지 못하는 경우
+					- contentType
+						- text/html
+						- text/plain
+						- application/json
+					- enctype: multipart/from-data
+				500 에러의 경우
+					- 가장 먼저 해야하는 것 -> console창 에러의 가장 위쪽이면서 가장 오른쪽 확인
+					- 오타
+					- nullpointer
+					- sql
+					- indexOut
+					- di 잘 못 했을 때
+					- @Component(Controller, RestController, Service, Mapper, Repository, Configuration) IoC에 등록 안했을때
+					- Interface 겹칠 때 Bean 객체가 IoC에 여러개 생성되어 있을 때
+					
+*/
+let totalPage = 0;	// totalPage가 있어야 페이지 계산을 할수있어서 제일 위
 let page = 1;
-let totalPage = 0;
-
-sectionBoby.onscroll = () => {
-	console.log(sectionBoby.scrollTop)
-	let checkNum = todoContentList.clientHeight - sectionBoby.offsetHeight - sectionBoby.scrollTop;
-	
-	if(checkNum < 1 && checkNum > -1 && page < totalPage){
-		console.log(page);
-		console.log(totalPage);
-		page++;
-		load();
-	}
-}
-
 let listType = "all";
-
-load();
-
-selectedTypeButton.onclick = () => {
-    typeSelectBoxList.classList.toggle("visible");
-}
-
-
-for(let i = 0; i < typeSelectBoxListLis.length; i++){
-	
-	typeSelectBoxListLis[i].onclick = () => {
-		page = 1;
-		
-		for(let i = 0; i < typeSelectBoxListLis.length; i++){
-			typeSelectBoxListLis[i].classList.remove("type-selected");
-		}
-		
-		const selectedType = document.querySelector(".selected-type");
-		
-		typeSelectBoxListLis[i].classList.add("type-selected");
-		
-		listType = typeSelectBoxListLis[i].textContent.toLowerCase();
-		
-		selectedType.textContent = typeSelectBoxListLis[i].textContent;
-		
-		todoContentList.innerHTML = "";
-		
-		load();
-		
-		typeSelectBoxList.classList.toggle("visible");
-		
-	}
-	
-}
-
 
 function load() {
 	$.ajax({
@@ -67,66 +56,61 @@ function load() {
 		},
 		dataType: "json",
 		success: (response) => {
-			getList(response.data);
+			const todolist = response.data;
+			
+			setTotalPage(todolist[0].totalCount);
+			setIncompleteCount(todolist[0].incompleteCount)
+			createList(todolist);	// Dto객체가 들어있는 리스트 20개를 createList로
 		},
 		error: errorMessage
 		
 	})
 }
 
-function setTotalCount(totalCount){
+function setTotalPage(totalCount){
 	totalPage = totalCount % 20 == 0 ? totalCount / 20 : Math.floor(totalCount / 20) + 1;
 }
 
-function getList(data) {
-	
-	incompleteCountNumber.textContent = data[0].incompleteCount;
-	setTotalCount(data[0].totalCount);
-	for(let content of data) {
-		const listContent = `
-			<li class="todo-content">
-                <input type="checkbox" id="complete-check-${content.todoCode}" class="complete-check" ${content.todoComplete ? 'checked' : ''}>
-                <label for="complete-check-${content.todoCode}"></label>
-                <div class="todo-content-text">${content.todo}</div>
-                <input type="text" class="todo-content-input visible" value="${content.todo}">
-                <input type="checkbox" id="importance-check-${content.todoCode}" class="importance-check" ${content.importance ? 'checked' : ''}>
-                <label for="importance-check-${content.todoCode}"></label>
-                <div class="trash-button"><i class="fa-solid fa-trash"></i></div>
-            </li>
-		`
-		todoContentList.innerHTML += listContent;
-	}
-	
-	addEvent();
+function setIncompleteCount(incompleteCount) {
+	incompleteCountNumber.textContent = incompleteCount;
 }
 
-function addEvent() {
-	const todoContents = document.querySelectorAll(".todo-content");
+function appendList(listContent) {
+	todoContentList.innerHTML += listContent
+}
+
+function addCompleteEvent(todoContent, todoCode) {
+	const completeCheck = todoContent.querySelector(".complete-check");
 	
-	for(let i = 0; i < todoContents.length; i++){	
-		let todoCode = todoContents[i].querySelector(".complete-check").getAttribute("id");
-		let index = todoCode.lastIndexOf("-");
-		todoCode = todoCode.substring(index + 1);
-		
-		todoContents[i].querySelector(".complete-check").onchange = () => {
-			let incompleteCount = parseInt(incompleteCountNumber.textContent);
+	completeCheck.onchange = () => {
+			let incompleteCount = parseInt(incompleteCountNumber.textContent);	// parseInt -> 숫자로 바꿔줌
 			
-			if(todoContents[i].querySelector(".complete-check").checked) {
+			if(completeCheck.checked) {
 				incompleteCountNumber.textContent = incompleteCount - 1;
 			}else{
 				incompleteCountNumber.textContent = incompleteCount + 1;
 			}
-			updateCheckStatus("complete", todoContents[i], todoCode);
+			updateCheckStatus("complete", todoContent, todoCode);
 		}
-		
-		todoContents[i].querySelector(".importance-check").onchange = () => {
-			updateCheckStatus("importance", todoContents[i], todoCode);
+}
+
+function addImportanceEvent(todoContent, todoCode) {
+	const importanceCheck = todoContent.querySelector(".importance-check");
+	
+	importanceCheck.onchange = () => {
+			updateCheckStatus("importance", todoContent, todoCode);
 		}
-		
-		todoContents[i].querySelector(".trash-button").onclick = () => {
-			deleteTodo(todoContents[i], todoCode);
+}
+
+function addDeleteEvent(todoContent, todoCode) {
+	const trashButton = todoContent.querySelector(".trash-button");
+	
+	trashButton.onclick = () => {
+			deleteTodo(todoContent, todoCode);
 		}
-		
+}
+
+function addContentInputEvent(todoContent, todoCode) {
 		const todoContentText = todoContents[i].querySelector(".todo-content-text");
 		const todoContentInput = todoContents[i].querySelector(".todo-content-input");
 		let todoContentValue = null;
@@ -170,15 +154,116 @@ function addEvent() {
 					updateTodoContent();
 				}
 		}
+		
 		todoContentInput.onkeyup = () => {
 			if(window.event.keyCode == 13) {
 				eventFlag = false;
 				updateTodoContent();
 			}
 		}
+}
+
+function substringTodoCode(todoContent) {
+	const completeCheck = todoContent.querySelector(".complete-check");
+	
+	let todoCode = completeCheck.getAttribute("id");
+	let tokenIndex = todoCode.lastIndexOf("-");
+	
+	return todoCode.substring(index + 1);
+	
+}
+
+function addEvent() {	
+	const todoContents = document.querySelectorAll(".todo-content");
+	
+	for(let todoContent of todoContents){	
+		const todoCode = substringTodoCode(todoContent);
 		
+		addCompleteEvent(todoContent, todoCode);
+		addImportanceEvent(todoContent, todoCode);
+		addDeleteEvent(todoContent, todoCode);
+		addContentInputEvent(todoContent, todoCode);
 	}
 }
+
+function createList(todolist) {
+	
+	for(let content of todolist) {
+		const listContent = `
+			<li class="todo-content">
+                <input type="checkbox" id="complete-check-${content.todoCode}" class="complete-check" ${content.todoComplete ? 'checked' : ''}>
+                <label for="complete-check-${content.todoCode}"></label>
+                <div class="todo-content-text">${content.todo}</div>
+                <input type="text" class="todo-content-input visible" value="${content.todo}">
+                <input type="checkbox" id="importance-check-${content.todoCode}" class="importance-check" ${content.importance ? 'checked' : ''}>
+                <label for="importance-check-${content.todoCode}"></label>
+                <div class="trash-button"><i class="fa-solid fa-trash"></i></div>
+            </li>
+		`
+		appendList(listContent);
+	}
+	
+	addEvent();
+}
+
+
+
+sectionBoby.onscroll = () => {
+	console.log(sectionBoby.scrollTop)
+	let checkNum = todoContentList.clientHeight - sectionBoby.offsetHeight - sectionBoby.scrollTop;
+	
+	if(checkNum < 1 && checkNum > -1 && page < totalPage){
+		console.log(page);
+		console.log(totalPage);
+		page++;
+		load();
+	}
+}
+
+
+
+load();
+
+selectedTypeButton.onclick = () => {
+    typeSelectBoxList.classList.toggle("visible");
+}
+
+
+for(let i = 0; i < typeSelectBoxListLis.length; i++){
+	
+	typeSelectBoxListLis[i].onclick = () => {
+		page = 1;
+		
+		for(let i = 0; i < typeSelectBoxListLis.length; i++){
+			typeSelectBoxListLis[i].classList.remove("type-selected");
+		}
+		
+		const selectedType = document.querySelector(".selected-type");
+		
+		typeSelectBoxListLis[i].classList.add("type-selected");
+		
+		listType = typeSelectBoxListLis[i].textContent.toLowerCase();
+		
+		selectedType.textContent = typeSelectBoxListLis[i].textContent;
+		
+		todoContentList.innerHTML = "";
+		
+		load();
+		
+		typeSelectBoxList.classList.toggle("visible");
+		
+	}
+	
+}
+
+
+
+
+
+
+
+
+
 
 function updateStatus(type, todoCode) {
 	result = false;

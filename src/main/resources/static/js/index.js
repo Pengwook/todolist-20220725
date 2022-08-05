@@ -4,6 +4,8 @@ const typeSelectBoxListLis = typeSelectBoxList.querySelectorAll("li");
 const todoContentList = document.querySelector(".todo-content-list");
 const sectionBoby = document.querySelector(".section-body");
 const incompleteCountNumber = document.querySelector(".incomplete-count-number");
+const modalContainer = document.querySelector(".modal-container");
+const todoAddButton = document.querySelector(".todo-add-button");
 
 /*  게시글 불러오기
 
@@ -199,7 +201,6 @@ function createList(todolist) {
 	addEvent();
 }
 
-
 sectionBoby.onscroll = () => {
 	console.log(sectionBoby.scrollTop)
 	let checkNum = todoContentList.clientHeight - sectionBoby.offsetHeight - sectionBoby.scrollTop;
@@ -261,6 +262,54 @@ for(let i = 0; i < typeSelectBoxListLis.length; i++){
 	
 }
 
+todoAddButton.onclick = () => {
+	modalContainer.classList.toggle("modal-visible");
+	todoContentList.style.overflow = "hidden";  // 이걸 안해주면 스크롤이 움직임
+	setModalEvent();
+}
+
+function clearModalTodoInputValue(modalTodoInput) {
+	modalTodoInput.value = "";
+}
+
+function uncheckedImportance() {
+	importanceFlag.checked = false;
+}
+
+function setModalEvent() {
+	const modalCloseButton = modalContainer.querySelector(".modal-close-button");
+	const importanceFlag = modalContainer.querySelector(".importance-check");
+	const modalTodoInput = modalContainer.querySelector(".modal-todo-input");
+	const modalCommitButton = modalContainer.querySelector(".modal-commit-button");
+
+	modalContainer.onclick = (e) => {
+		if(e.target == modalContainer) { // 이벤트가 일어난 객체가 modalContainer면 
+			modalCloseButton.click();
+		}
+	}
+
+	modalCloseButton.onclick = () => {
+		modalContainer.classList.toggle("modal-visible");
+		todoContentList.style.overflow = "auto";
+		uncheckedImportance(importanceFlag);
+		clearModalTodoInputValue(modalTodoInput);
+	}
+	
+	modalTodoInput.onkeyup = () => {
+		if(window.event.keyCode == 13) {
+			modalCommitButton.click();
+		}
+	}
+	
+	modalCommitButton.onclick = () => {
+		data = {
+			importance: importanceFlag.checked,
+			todo: modalTodoInput.value
+		}
+		addTodo(data);
+		modalCloseButton.click();
+	}
+}
 //////////////////////////////////////////// <<<< REQUEST >>>>>>> ///////////////////////////////////////////////
 
 function load() {
@@ -332,6 +381,24 @@ function deleteTodo(todoContent, todoCode) {
 		success: (response) => {
 			if(response.data) {
 				todoContentList.removeChild(todoContent);
+			}
+		},
+		error: errorMessage
+	})
+}
+
+function addTodo(data) {
+	$.ajax({
+		type: "post",
+		url: "/api/v1/todolist/todo",
+		contentType: "application/json",
+		data: JSON.stringify(data),
+		async: false,
+		dataType: "json",
+		success: (response) => {
+			if(response.data) {
+				clearTodoContentList(); 
+				load();
 			}
 		},
 		error: errorMessage
